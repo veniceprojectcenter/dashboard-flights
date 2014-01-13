@@ -1,0 +1,27 @@
+README for Flight Widget to the Venice Project Center Dashboard
+
+Introduction
+	The Flight Widget to the Venice Project Center Dashboard is an application designed to work in conjunction with Python's firebase library to scrape publically available data on flights entering Venice's Marco Polo Airport, look up the types of those flights on manually assembled data to determine their seating capacity, and use that data with empirical observations from the VPC B13 Demographics team to estimate the number of tourists entering the city of Venice in real time.
+	If you are reading this document, one of two things has happened.  Either you have determined that the widget is not working, in which case you may skip to the section "The Inevitable Problem" below.  Or you have been assigned to maintain, reproduce, upgrade, or otherwise tinker with or learn from this app as part of your IQP experience, in which case you may wish to read the entire document.  If this is so, I wish you good luck and patience with your IQP.
+
+Configuration Document
+	The configuration document, config.py, contains a number of purpose-specific fields so that they can be changed easily.  These fields include directory paths, target URLs, and specific strings which signal the start or end of a collection of data.  These fields are referred to by a number of other source files instead of having these files use string or integer literals, so that the appropriate fields can be changed with a single edit.
+
+Scraping
+	This app uses Python's urllib2 library to scrape the page source for the webpage "http://flightradar24.com/airport/vce", which is the arrivals page for the Marco Polo Airport (VCE).  Then, it uses the known delimiters to find the area of the page in which data are stored, and parses the string to extract the individual stored flights.  This is where "The Inevitable Problem" occurs (see below), if at all.  The script then "pickles" the list of flights, stored as objects of the class flightmod.Flight, and saves them to a file flights.dat for future retrieval.
+
+Seating Capacity
+	The seating capacity of each airline/aircraft combination (different aircrafts may configure the same aircraft differently, resulting in different numbers of seats) is stored in the file types.dat.  When the script encounters a request to determine the flight capacity of a specific aircraft, it looks in this file, and if it cannot find what it is looking for, it makes a note in the file that the capacity of that airline/aircraft combination is unknown.  It also logs the fact that it encountered an unknown flight in the log file, log.txt.  It only does so once, so there is no danger of the types.dat file being flooded with redundant error messages.
+
+Tourist Estimation
+	In the config.py file, there is a function called "ratio", which takes a flight and returns the estimated proportion of its seating capacity which contains tourists going to Venice.  (The number of passengers may be lower than the seating capacity, but it has not proven to be terribly different).  Currently, it returns a constant, as our observations have implied that this proportion is in fact constant, but it can be modified to take specific information about the flight into account.  In the main script, core.py, it then writes the number of flights observed, total seating capacity, and estimated tourists from the past 24 hours to the Dashboard using firebase.  If there are flights with unknown capacity, it will assume that the unknown flights have a capacity that is the mean of the remaining, known flights.
+
+The Inevitable Problem
+	This application does not use an API of any kind, and as such is not supported by flightradar24.com.  During the past semester, the format of the page source has been changed twice, requiring a modification of the fields startstring and endstring in config.py, which indicate the sequence of characters which start and end a sequence of flight data objects, respectively.  Further modifications may occur, necessitating the modification of other fields or even the creation of new fields.  As of this writing, I have received no response from flightradar24.com as to whether or not they sanction our scraping, so I would not turn to them for any assistance.
+	In my experience, this will be the most common cause of malfunctions in the app, as well as the most subtle: there will be no warning or error message, or indication of any kind that something is wrong other than the apparent disappearance of all future flights.  If you are watching the Dashboard, you may notice that the number of flights is dropping as new flights do not appear to replace old ones.  Other than that, you will not see much.
+
+Good luck.
+
+- Alex Gorowara
+- algorowara@gmail.com
+- WPI 2015
